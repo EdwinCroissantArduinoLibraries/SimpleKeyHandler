@@ -1,0 +1,26 @@
+#######################################
+# Syntax Coloring Map For SimpleKeyHandler
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SimpleKeyHandler		KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+read					KEYWORD2
+clear					KEYWORD2
+isPressed				KEYWORD2
+onShortPress			KEYWORD2
+onLongPress				KEYWORD2
+onRepPress				KEYWORD2
+onRepPressCount			KEYWORD2
+onRepPressCount			KEYWORD2
+setCompanion			KEYWORD2
+#######################################
+# Constants (LITERAL1)
+#######################################
