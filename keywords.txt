@@ -19,8 +19,7 @@ onShortPress			KEYWORD2
 onLongPress				KEYWORD2
 onRepPress				KEYWORD2
 onRepPressCount			KEYWORD2
-onRepPressCount			KEYWORD2
-setCompanion			KEYWORD2
+onTwoPress				KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
