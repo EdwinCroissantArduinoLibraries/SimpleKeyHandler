@@ -21,20 +21,28 @@
 
 #include "SimpleKeyHandler.h"
 
+/*
+ * These variables and function pointer are defined as static as they
+ * are common for all instances of this class
+ */
+uint16_t SimpleKeyHandler::_count = 0;
+SimpleKeyHandler* SimpleKeyHandler::_activeKey = nullptr;
+SimpleKeyHandler* SimpleKeyHandler::_otherKey = nullptr;
+void (*SimpleKeyHandler::onTwoPress)(const SimpleKeyHandler* senderKey,
+		const SimpleKeyHandler* otherKey) = nullptr;
+
 SimpleKeyHandler::SimpleKeyHandler() {
 	clear();
-	_companion = nullptr;
 	_nextValidRead = 0;
 	_previousState = keyOff;
-	_count = 0;
+	_allowEvents = false;
 }
 /*
- * Clears all the callback pointer;
+ * Clears all the callback pointers of the key (not onTwopress).
  */
 void SimpleKeyHandler::clear() {
 	onShortPress = nullptr;
 	onLongPress = nullptr;
-	onBothPress = nullptr;
 	onRepPress = nullptr;
 	onRepPressCount = nullptr;
 }
@@ -58,6 +66,13 @@ void SimpleKeyHandler::read(bool keyState) {
 				// when still on advance to the next state
 				_previousState = keyOn;
 				_nextValidRead = millis() + longPress;
+				// disable the other keys
+				if (!_activeKey)
+					_activeKey = this;
+				// try to claim the other key
+				else if (!_otherKey)
+					_otherKey = this;
+				_allowEvents = (_activeKey == this);
 			} else
 				// otherwise it was a glitch
 				_previousState = keyOff;
@@ -72,23 +87,25 @@ void SimpleKeyHandler::read(bool keyState) {
 			// callback after long press and repeat after the repeat interval
 			if (millis() >= _nextValidRead) {
 				_nextValidRead = millis() + repeatInterval;
-				if (onLongPress && _count == 0)
-					onLongPress();
-				if (onRepPressCount)
-					onRepPressCount(_count);
-				if (onRepPress)
-					onRepPress();
-				_count++;
-			} else if (_count == 0 && _companion
-					&& _companion->_previousState == keyOn
-					&& _companion->_count == 0) {
-				if (onBothPress)
-					onBothPress();
-				else if (_companion->onBothPress)
-					_companion->onBothPress();
-				// prevent each key to callback shortpress
-				_count++;
-				_companion->_count++;
+				// prevent events when disabled
+				if ((_allowEvents)) {
+					if (onLongPress && _count == 0)
+						onLongPress();
+					if (onRepPressCount)
+						onRepPressCount(_count);
+					if (onRepPress)
+						onRepPress();
+					_count++;
+				}
+			} else {
+				// handle the two key press;
+				if (_allowEvents && _otherKey && _count == 0) {
+					if (onTwoPress) {
+						onTwoPress(this, _otherKey);
+						// this is the only callback we do
+						_allowEvents = false;
+					}
+				}
 			}
 		}
 		break;
@@ -98,11 +115,15 @@ void SimpleKeyHandler::read(bool keyState) {
 			if (!keyState) {
 				// when off advance to the next state
 				_previousState = keyOff;
-				// if key was released within the long press time callback
-				if (onShortPress && _count == 0)
+				if (_allowEvents && onShortPress && _count == 0)
+					// if key was released within the long press time callback
 					onShortPress();
-				else
+				// clean up if active key
+				if (_activeKey == this) {
 					_count = 0;
+					_activeKey = nullptr;
+					_otherKey = nullptr;
+				}
 			} else
 				// otherwise it was a glitch
 				_previousState = keyOn;
@@ -116,23 +137,4 @@ void SimpleKeyHandler::read(bool keyState) {
  */
 bool SimpleKeyHandler::isPressed() {
 	return _previousState == keyOn;
-}
-
-/*
- * Couples a companion key. When both keys are pressed the
- * onBothPressed is executed. Only one key has to be coupled
- */
-void SimpleKeyHandler::setCompanion(SimpleKeyHandler* companion) {
-	if (companion) {
-		if (_companion) {
-			_companion->_companion = nullptr;
-		}
-		_companion = companion;
-		_companion->_companion = this;
-	} else {
-		if (_companion) {
-			_companion->_companion = nullptr;
-		}
-		_companion = companion;
-	}
 }
