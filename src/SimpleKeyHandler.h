@@ -17,10 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * See the README.md file for additional information.
- *
- * version history:
- * 00.01 09may2017 First release
- * 00.02 24jul2017 Removed setCompanion and onBothPress, introduced onTwoPress callback
  */
 
 #ifndef SIMPLEKEYHANDLER_H_
@@ -43,9 +39,10 @@ public:
 	void (*onRepPress)();
 	// Repeatedly called when the long press time expired, the count is passed as an argument
 	void (*onRepPressCount)(uint16_t count);
-	// Called when two keys are pressed at the same time
-	static void (*onTwoPress)(const SimpleKeyHandler* senderKey,
-			const SimpleKeyHandler* otherKey);
+	// Called when both key are pressed
+	void (*onBothPress)();
+	void setCompanion(SimpleKeyHandler* companion);
+
 private:
 	enum lastKeyState {
 		keyOff, keyToOn, keyOn, keyToOff
@@ -56,10 +53,8 @@ private:
 		repeatInterval = 250
 	};
 	uint32_t _nextValidRead;
-	bool _allowEvents;
-	static uint16_t _count;
-	static SimpleKeyHandler* _activeKey;
-	static SimpleKeyHandler* _otherKey;
+	uint16_t _count;
+	SimpleKeyHandler* _companion;
 };
 
 #endif /* SIMPLEKEYHANDLER_H_ */
